@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/stealien/mcpredict/internal/audit"
-	"github.com/stealien/mcpredict/internal/hookio"
-	"github.com/stealien/mcpredict/internal/intent"
-	"github.com/stealien/mcpredict/internal/policy"
-	"github.com/stealien/mcpredict/internal/scanner"
-	"github.com/stealien/mcpredict/internal/verdict"
+	"mcpredict/internal/audit"
+	"mcpredict/internal/hookio"
+	"mcpredict/internal/intent"
+	"mcpredict/internal/policy"
+	"mcpredict/internal/scanner"
+	"mcpredict/internal/verdict"
 )
 
 // runPre handles a PreToolUse hook invocation.

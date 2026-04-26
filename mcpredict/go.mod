@@ -1,4 +1,4 @@
-module github.com/stealien/mcpredict
+module mcpredict
 
 go 1.19
 

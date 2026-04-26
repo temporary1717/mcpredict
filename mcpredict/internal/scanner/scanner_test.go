@@ -51,14 +51,16 @@ func TestScan_LowEntropyDoesNotTriggerHighEntropyRule(t *testing.T) {
 	}
 }
 
-// FP regression: path-shaped strings (live MCP test 17:14, mcp__ida-pro-dynamic__list_ida_instances)
-// must not match generic-high-entropy after the 4.5 → 5.0 entropy threshold hardening.
+// FP regression: path-shaped strings must not match generic-high-entropy after
+// the 4.5 → 5.0 entropy threshold hardening. Synthetic samples chosen to mirror
+// shapes seen in the wild (long unix paths with forward slashes that satisfy
+// [A-Za-z0-9+/=_\-]{32,} character class but have moderate entropy).
 func TestScan_FilesystemPathDoesNotMatchHighEntropy(t *testing.T) {
 	samples := []string{
-		"/Users/toor/Documents/stealien/SYNOLOGY NAS BST150-4T/binary/hda1/cgi_dir/libsynocgi.so.7",
-		"/var/packages/ReplicationService/lib/libsynobtrfsreplicacore.so.7",
-		"FIRMWARE/extractions-1.3.2-65648/hda1.extracted/var/packages",
-		"github.com/stealien/mcpredict/internal/scanner",
+		"/opt/firmware/sample/binary/lib/libsample.so.7",
+		"/var/packages/ExampleService/lib/libexampleservicecore.so.7",
+		"FIRMWARE/extractions-1.2.3-45678/disk.extracted/var/packages/Example",
+		"mcpredict/internal/scanner",
 	}
 	for _, s := range samples {
 		if hasPattern(Scan(s), "generic-high-entropy") {

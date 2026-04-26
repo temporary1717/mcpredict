@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stealien/mcpredict/internal/verdict"
+	"mcpredict/internal/verdict"
 )
 
 const testYAML = `

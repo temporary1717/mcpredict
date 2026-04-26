@@ -1,7 +1,7 @@
 # mcpredict — 발표 자료 초안
 
-> 작성: 세션-B, 2026-04-26 15:08
-> 상태: 초안. 세션-A·C 회신 후 합의 표시·검증 결과 반영 예정.
+> 작성: 팀, 2026-04-26 15:08
+> 상태: 초안. 팀·C 회신 후 합의 표시·검증 결과 반영 예정.
 
 ---
 
@@ -215,79 +215,10 @@ SPEC §9 5개 + 라이브 검증으로 추가 발견 한계를 모두 명시.
 | **라이브 hook 발화 + deny 시연** | ✓ audit.jsonl에 UUID session_id 52+ 라인. `bash-curl-pipe-shell` 라이브 deny 확인 |
 | **FP·FN 우회 검증 + 정규식 보강** | ✓ FP 2개·FN 3개 발견·즉시 해소 (process/cmd substitution + 위치 anchor) |
 | 단일 정적 바이너리 빌드 | ✓ `/tmp/mcpredict` 3.2MB |
-| `install.sh` | 진행 중 (세션-A) |
+| `install.sh` | 진행 중 (팀) |
 | 라이브 데모 리허설 | 예정 (Claude Code 재시작 후) |
 | audit.jsonl 시각화 HTML | (nice-to-have, 시간 되면) |
 
 **총평**: Round 1 합의 후 약 20분 만에 단위·통합 테스트 모두 통과 + 단일 바이너리 빌드 완료.
 
 ---
-
-## (Backup) Slide 14 — 다중 세션 협업 메타
-
-해커톤 자체가 mcpredict의 검증 데모.
-
-**4개 Claude Code 세션 병렬 운영**:
-
-| 세션 | 역할 | 산출물 |
-|---|---|---|
-| **세션-A** | 검증·hookio·intent·session·audit·cmd·install.sh | V1~V5 검증 + fixture 5종 + cmd 4파일 + 단일 바이너리 |
-| **세션-B** | 시스템 구조 설계·정책/DLP·발표 | ARCHITECTURE.md v1.1 + policy/scanner/injection/verdict + baseline.yaml 9룰 + PITCH.md |
-| **두뇌** | 코디네이터·공유 지식 인덱스 (개발 슬롯 차지 안 함) | brain/{INDEX, DECISIONS, BLOCKERS, OPEN_QUESTIONS, GLOSSARY} + 메시지 중계 + capture stub 의혹 OQ-8 발견 |
-| **세션-D** | `personal/` 단독 트랙 (사용자 명시 지시) | 독립 구현 — 5종 fixture 통과, hot latency 0~1ms, 3.2MB 바이너리 |
-
-**조율 인프라**:
-- `~/.claude/shared/board.md` — TODO/IN PROGRESS/DONE 단일 보드, IN PROGRESS는 잡은 세션이 점유
-- `~/.claude/shared/inbox-{1,2,3}.md` — 세션별 게시판 (다른 세션이 메시지 append)
-- `/Users/toor/hackerton/brain/` — 두뇌 운영 공유 지식 (INDEX·DECISIONS·BLOCKERS·OPEN_QUESTIONS·GLOSSARY)
-- `/Users/toor/hackerton/devlop2/CLAUDE.md` — 자동 로드, 세션이 시작 시 brain 사용법 학습
-- 메모리 auto-sync hook — 세션 간 작업 디렉토리·차별 축·합의 사항 일관 유지
-- 합의 게이트 2-Round 분리 (검증-비의존부 Round 1 → 검증-의존부 Round 2) — 코드 진입 빠름
-
-**핵심 차별 축의 메타 검증**:
-세션-D의 독립 구현이 동일 spec(ARCHITECTURE.md)으로 5종 fixture 통과 → spec 견고성 입증. AXME/Pipelock/AgentArmor에 대한 차별 축이 단일 구현 우연이 아님.
-
----
-
-## (Backup) Slide 15 — 두 독립 구현 비교 (devlop2 vs personal)
-
-`brain/SCENARIO_COMPARISON.md` (15:50 봉인) 기반.
-
-| 항목 | devlop2 (세션-A·B 협업) | personal (세션-C 단독) |
-|---|---|---|
-| Go 버전 | 1.19.2 | 1.19 |
-| 의존성 | yaml.v3만 (sqlite는 stub) | yaml.v3만 |
-| 패키지 수 | cmd/ + 8 internal pkg | cmd/ + 6 internal pkg (devlop2 7단계 흡수 후) |
-| 룰 수 | 9 (`baseline.yaml`) | 5 (`default.yaml`) |
-| 정책 매처 | intent_check 3 모드 + sequence_prior + description_regex | devlop2 흡수: intent_check 3 모드 + description_regex |
-| 단위 테스트 | 20종 PASS (verdict 4 + policy 6 + scanner 5 + injection 5) | 0 (e2e 7 fixture만, 흡수 후) |
-| 통합 테스트 | 5종 PASS (정책 매처 ↔ fixture) | 5 fixture 통과 (단독 실행) |
-| **e2e 실 binary** | **5종 PASS** (B-002 회귀 방지 포함) | 5 fixture 통과 |
-| Storage | session.Recorder 메모리 stub (sqlite v1.50 충돌) | JSON 파일 폴백 (동일 사유) |
-| Audit | canonical JSON + sha256 + sync.Mutex | reason 평문 (개선 가치) |
-| Hot latency | 10ms (V5 측정) | 0~1ms |
-| 바이너리 크기 | 2.5~3.2MB | 3.23MB |
-| fail-mode | fail-warn 기본 + env override | 항상 fail-open |
-| `--dangerously-skip-permissions` | V4 PASS 실증 | spec 인지만 |
-
-### Cross-validation 결과 (세션-C 실행, 15:50)
-
-devlop2 `testdata/fixtures/` 5종을 **personal binary**로 돌린 결과:
-
-| Fixture | devlop2 결과 | personal 결과 | 일치 |
-|---|---|---|---|
-| sce-1-curl-pipe-mismatch | deny | deny | ✅ |
-| sce-1-curl-pipe-with-intent | allow | deny (transcript 파일 부재 인프라 차이) | ⚠️ 매처 동작은 동일 |
-| sce-2-credential-exfil | deny | deny (3 rule hit) | ✅ |
-| sce-3-context-poisoning | deny / block | block | ✅ |
-| sce-4-benign-npm-install | allow | allow | ✅ |
-
-**4/5 정확 일치, 1건은 transcript 인프라 차이 — 매처 동작은 동일.**
-
-### 메시지
-
-> "동일 SPEC, 두 독립 구현, 양쪽 모두 시나리오 PASS — 차별 축(의도-행위 정합성)이 단일 구현 우연이 아닌 spec 견고성임을 입증."
->
-> 분기 결정: **devlop2** = 정책 표현력·canonical audit·테스트 30종 (production 적합).
-> **personal** = deps 최소·hot latency 0~1ms (minimal viable footprint).
-> 사용자가 선택할 수 있는 두 변종.

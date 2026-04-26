@@ -1,7 +1,7 @@
 # mcpredict — 시스템 구조 설계
 
-> 작성: 세션-B, 2026-04-26 14:55
-> 갱신: v1.1 (15:05) — 세션-A의 A1~A9 회신 반영
+> 작성: 팀, 2026-04-26 14:55
+> 갱신: v1.1 (15:05) — 팀의 A1~A9 회신 반영
 > 상태: **검증-비의존부 합의 라운드 진행 중**, 검증-의존부는 §11 Open Questions에서 V1~V5 결과 대기
 > 합의 후 본 문서가 mcpredict 구현의 기준 문서가 됨.
 
@@ -15,7 +15,7 @@
 > 직전 assistant 메시지(의도)와 `tool_input`(행위)의 의미적 정합성을 hook 시점 교차 검증.
 
 본 문서의 합의 라운드는 **2단계**로 분리:
-- **Round 1 (검증-비의존부)**: 모듈 경계, Verdict struct, 정책 YAML 스키마, audit/SQLite 스키마, 빌드·배포, fail-safe, 작업 분담 — 세션-A 검증 결과 없이 합의 가능
+- **Round 1 (검증-비의존부)**: 모듈 경계, Verdict struct, 정책 YAML 스키마, audit/SQLite 스키마, 빌드·배포, fail-safe, 작업 분담 — 팀 검증 결과 없이 합의 가능
 - **Round 2 (검증-의존부)**: `tool_input` 키맵, deny 인터페이스, latency 모드 — V1~V5 결과 후 동결
 
 ---
@@ -386,15 +386,15 @@ type Verifier interface {
 | **OQ-5** | e2e latency (cold start 포함). 500ms 예산 안에 들어오는가? | V5 결과 (3회 측정 평균) | command 모드 vs HTTP daemon 모드 결정 |
 | **OQ-6** | session_id가 동일 세션에서 안정적인가? 도구 호출마다 변하는가? | V2 부산물 | session.db 식별자 |
 | **OQ-7** | hook이 동시에 여러 번 호출될 수 있는가? (병렬 도구 호출) | V1/V2 부산물 | SQLite 락, audit append concurrency |
-| **OQ-8** | (NEW) 세션-A의 14:51 capture가 **stub**(echo pipe-test)인가 **실 발화**인가? `session_id:"test"` 값으로 보아 stub 의심. 실 발화 capture가 있어야 V1 PASS. | 세션-A re-test (settings watcher pickup 또는 `/hooks` reload 또는 Claude Code 재시작) | V1 진위, OQ-1~7 모두의 전제 |
+| **OQ-8** | (NEW) 팀의 14:51 capture가 **stub**(echo pipe-test)인가 **실 발화**인가? `session_id:"test"` 값으로 보아 stub 의심. 실 발화 capture가 있어야 V1 PASS. | 팀 re-test (settings watcher pickup 또는 `/hooks` reload 또는 Claude Code 재시작) | V1 진위, OQ-1~7 모두의 전제 |
 
-세션-A는 검증 결과를 inbox-1.md에 dump해주기로 함.
+팀은 검증 결과를 공유 게시판에 dump해주기로 함.
 
 ---
 
 ## 12. 작업 분담 매핑 (제안)
 
-| 모듈 | 세션-A | 세션-B | 세션-C |
+| 모듈 | 팀 | 팀 | 팀 |
 |---|---|---|---|
 | cmd/mcpredict (entry, 라우팅) | ✓ | | |
 | internal/hookio | ✓ | | |
@@ -442,7 +442,7 @@ type Verifier interface {
 | §12 작업 분담 | A1 동의 (양도) → ✓ |
 | §4.1 hook 출력 통일 (A6) | A6 동의 → ✓ |
 
-세션-A·C, Round 1 항목 중 미회신/이견 있는 것만 inbox에 표시 부탁.
+팀·C, Round 1 항목 중 미회신/이견 있는 것만 inbox에 표시 부탁.
 
 ### Round 2 — 검증-의존부 (V1~V5 결과 후)
 
@@ -453,11 +453,11 @@ type Verifier interface {
 | `internal/intent` 파서 구체 구현 | OQ-3 (V3 transcript 샘플) |
 | A6 deny 동작 확정 | OQ-4 (V4 실증) |
 | 모드 1 vs 모드 2 결정 | OQ-5 (V5 latency) |
-| OQ-8 capture 진위 | 세션-A re-test |
+| OQ-8 capture 진위 | 팀 re-test |
 
 ---
 
 ## 15. 변경 로그
 
-- 2026-04-26 14:55 — v1 초안 (세션-B). 검증 결과 대기.
-- 2026-04-26 15:05 — v1.1. 세션-A의 A1~A9 회신 반영. 합의 게이트를 Round 1 / Round 2로 분리 (세션-C 제안). OQ-8 추가 (capture 진위 의혹).
+- 2026-04-26 14:55 — v1 초안 (팀). 검증 결과 대기.
+- 2026-04-26 15:05 — v1.1. 팀의 A1~A9 회신 반영. 합의 게이트를 Round 1 / Round 2로 분리 (팀 제안). OQ-8 추가 (capture 진위 의혹).

@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/stealien/mcpredict/internal/verdict"
+	"mcpredict/internal/verdict"
 	"gopkg.in/yaml.v3"
 )
 

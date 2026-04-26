@@ -11,7 +11,7 @@
 // dlp 패턴에 매칭되지 않게 하면서 binary 호출 시점엔 정상 평문이 전달됨.
 //
 // 실행:
-//   cd devlop2 && go test -v ./tests/coverage/...
+//   go test -v ./tests/coverage/...
 //
 // 우선 binary 빌드 필요:
 //   go build -o bin/mcpredict ./cmd/mcpredict

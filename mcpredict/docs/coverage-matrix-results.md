@@ -63,11 +63,11 @@
 
 | # | 패치 | 영향 | 난이도 | 영역 |
 |---|---|---|---|---|
-| 1 | `internal/scanner` widely-known dummy whitelist | FP-2, FP-3 동시 해소 | 낮음 (15분) | 세션-B |
-| 2 | `bash-curl-pipe-shell` regex 확장 (download-then-exec) | FN-1, FN-2 해소 | 중 (룰 작성) | 세션-B |
-| 3 | `bash-env-cat-and-curl` regex 확장 (awk/sed/head 등) | FN-3 해소 | 낮음 | 세션-B |
-| 4 | 새 룰 `bash-curl-upload-secret` | FN-4 해소 | 낮음 | 세션-B |
-| 5 | `search-intent-vs-write-action`에 `safe_path_allowlist` 옵션 | FP-1 해소 | 중 (스키마 변경) | 세션-B + policy 코드 |
+| 1 | `internal/scanner` widely-known dummy whitelist | FP-2, FP-3 동시 해소 | 낮음 (15분) | 팀 |
+| 2 | `bash-curl-pipe-shell` regex 확장 (download-then-exec) | FN-1, FN-2 해소 | 중 (룰 작성) | 팀 |
+| 3 | `bash-env-cat-and-curl` regex 확장 (awk/sed/head 등) | FN-3 해소 | 낮음 | 팀 |
+| 4 | 새 룰 `bash-curl-upload-secret` | FN-4 해소 | 낮음 | 팀 |
+| 5 | `search-intent-vs-write-action`에 `safe_path_allowlist` 옵션 | FP-1 해소 | 중 (스키마 변경) | 팀 + policy 코드 |
 
 5번은 정책 스키마 확장(allowlist) 필요. 1·3·4는 단순 패턴/whitelist 추가.
 
@@ -87,7 +87,7 @@
 3. Write Go test file — 동일 (해소: source split)
 4. PostToolUse Write Go test — content echo의 injection signature
 5. Bash grep "Reveal" — stdout sensitive line echo
-6. Bash heredoc inbox-2 (1차) — 메시지 안 평문 인용
+6. Bash heredoc 공유 게시판 (1차) — 메시지 안 평문 인용
 7. Bash awk pattern — pattern arg에 평문 인용
 8. Bash inline 매트릭스 — fixture 평문이 정책 룰들 다중 trigger
 9. Write coverage-results.md (1차) — 본문 설명에 평문 인용

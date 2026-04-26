@@ -5,7 +5,7 @@
 ## 사용
 
 ```bash
-open /Users/toor/hackerton/devlop2/tools/audit-viewer/index.html
+open ./tools/audit-viewer/index.html
 ```
 
 또는 임의 정적 서버 (예: `python3 -m http.server 8000`).

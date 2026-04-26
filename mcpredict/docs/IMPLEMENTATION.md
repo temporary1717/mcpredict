@@ -1,6 +1,6 @@
 # mcpredict — 구현 종합 정리
 
-> 작성: 세션-B, 2026-04-26 17:00
+> 작성: 팀, 2026-04-26 17:00
 > 9시간 해커톤 MVP 구현 결과·아키텍처·테스트·라이브 검증·협업 메타 단일 문서.
 >
 > 관련 문서: [`design/ARCHITECTURE.md`](../design/ARCHITECTURE.md) (계획·합의), [`docs/PITCH.md`](PITCH.md) (발표), [`docs/DEMO_SCRIPT.md`](DEMO_SCRIPT.md) (라이브 데모), [`README.md`](../README.md) (사용자 문서).
@@ -315,58 +315,10 @@ go build -o mcpredict ./cmd/mcpredict   # 3.2MB 정적 바이너리, Go 1.19+
 
 ---
 
-## 8. 협업 메타 — 4 세션 병렬
-
-이 프로젝트 자체가 mcpredict 협업 인프라의 검증 데모.
-
-| 세션 | 역할 | 작업 디렉토리 | 산출물 |
-|---|---|---|---|
-| **A** | 검증·hookio·intent·session·audit·cmd·install.sh | `devlop2/cmd`, `internal/{hookio,intent,session,audit}` | §7 V1~V6, 5 fixture, cmd 5파일, install.sh, e2e 1·2·3 PASS |
-| **B** (이 문서 작성자) | 시스템 설계·정책·DLP·발표 | `devlop2/{design,docs,internal/{policy,scanner,injection,verdict}, examples, testdata, tools, tests}` | ARCHITECTURE v1.1, baseline.yaml 11 룰, scanner+injection+verdict, 38종 테스트, PITCH 16+ 슬라이드, audit-viewer, DEMO_SCRIPT |
-| **두뇌** | 코디네이터·지식 인덱스 (개발 슬롯 X) | `~/.claude/shared/`, `/Users/toor/hackerton/brain/` | INDEX·DECISIONS (D-001~D-015)·BLOCKERS·OPEN_QUESTIONS·GLOSSARY·SPEC·SCENARIO_COMPARISON, 메시지 중계 |
-| **C** | 단독 트랙 (사용자 명시 지시) | `/Users/toor/hackerton/personal/` | 독립 구현 + 5 fixture + 단위 31종 + e2e 7종, devlop2의 7단계 흡수, 4/5 cross-validation 일치 |
-
-**조율 인프라**:
-- `~/.claude/shared/board.md` — TODO/IN PROGRESS/DONE 단일 보드
-- `~/.claude/shared/inbox-{1,2,3}.md` — 세션별 게시판 (append-only)
-- `/Users/toor/hackerton/brain/` — 두뇌 운영 공유 지식
-- `devlop2/CLAUDE.md` — 자동 로드, brain 사용법 학습
-
-**합의 게이트 2-Round**:
-- Round 1 (검증-비의존부): A1~A9 합의 → 코드 진입 (15:10)
-- Round 2 (검증-의존부): V1~V5 결과 후 인터페이스 동결 (15:18)
-
-**메타 발견 (세션-C 부수)**: scanner_test.go 작성 시 자기 코드 안의 GitHub PAT/AKIA 패턴이 자체 DLP에 차단됨 → 런타임 string concat으로 우회. **보안 도구가 자기 dogfooding으로 best practice 강제하는 meta-level 시연.**
-
----
-
-## 9. 의사결정 로그 (요약)
-
-`brain/DECISIONS.md` 정식. 핵심만:
-
-| ID | 결정 | 근거 |
-|---|---|---|
-| D-001 | 분담 + 상호 리뷰 모드 | 14:55 inbox-1 |
-| D-002 | 코드 진입 전 ARCHITECTURE 합의 게이트 | 사용자 14:55 지시 |
-| D-003 | 합의 게이트 2-Round 분리 | 두뇌 15:05 제안 |
-| D-005 | 단일 바이너리 + 서브커맨드 + command 모드 (HTTP daemon X) | A1·A2 / V5 hot 10ms |
-| D-006 | §7 V1~V6 PASS | 15:10 |
-| D-007 | `description_regex` 도입 + LLM attack vector 한계 명시 | V2 발견 |
-| D-008 | cmd ↔ internal 호환 확정 | 세션-A 15:18 wiring |
-| D-009 | e2e 시나리오 1·2·3 PASS | 실 binary |
-| D-010 | `injection.ExtractText`는 `encoding/json` 재귀 | B-002 해소 16:00 |
-| D-011 | 통합 테스트 외 **실 binary stdin pipe e2e** 필수 | B-002 노출 |
-| D-012 | 정책 정규식은 우회 패턴(process/cmd substitution) OR 묶음 | FN sweep 16:30 |
-| D-013 | 파괴 행위 룰은 위치 anchor `(?:^|[;&\`]|\$\()` 필수 | FP sweep 16:35 |
-| D-014 | 회귀 방지 fixture sce-{6,7,8,9} 추가 | 16:50 |
-| D-015 | SPEC §9 5개 + 라이브 발견 6개 = 11개 한계 정직 명시 | 16:50 |
-
----
-
-## 10. 디렉토리 구조 (실제)
+## 8. 디렉토리 구조
 
 ```
-/Users/toor/hackerton/devlop2
+mcpredict/
 ├── README.md                          # 사용자 진입 문서
 ├── CLAUDE.md                          # 협업 컨텍스트 (자동 로드)
 ├── DEMO.md                            # 빠른 데모 안내
@@ -410,25 +362,22 @@ go build -o mcpredict ./cmd/mcpredict   # 3.2MB 정적 바이너리, Go 1.19+
 ├── tools/audit-viewer/
 │   ├── index.html                     # 정적 HTML 9KB (verdict 카드)
 │   └── README.md
-└── experiments/                       # 검증 단계 산출물
-    ├── 01-hook-recon/                 # 세션-A: V1~V6
-    └── 02-policy-and-dlp/             # 세션-B: 초기 prototype
 ```
 
 ---
 
-## 11. 사용 예
+## 9. 사용 예
 
-### 11.1 install
+### 9.1 install
 ```bash
-cd /Users/toor/hackerton/devlop2
+# 프로젝트 루트에서
 ./install.sh
 # → ~/.claude/hooks/mcpredict 배포
 # → ~/.claude/settings.json hooks 패치
 # → "Claude Code 재시작 필요" 안내
 ```
 
-### 11.2 정책 직접 호출 (테스트)
+### 9.2 정책 직접 호출 (테스트)
 ```bash
 cat testdata/fixtures/sce-1-curl-pipe-mismatch.json | \
   env MCPREDICT_POLICY=$PWD/examples/policies/baseline.yaml \
@@ -436,20 +385,20 @@ cat testdata/fixtures/sce-1-curl-pipe-mismatch.json | \
 # → {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",...}}
 ```
 
-### 11.3 audit 시각화
+### 9.3 audit 시각화
 ```bash
 open tools/audit-viewer/index.html
 # → file picker로 ~/.mcpredict/audit.jsonl 선택 → verdict 카드
 ```
 
-### 11.4 uninstall
+### 9.4 uninstall
 ```bash
 ./install.sh --uninstall
 ```
 
 ---
 
-## 12. 한 줄 마무리
+## 10. 한 줄 마무리
 
 > **MCP 보안의 진짜 진입점은 transport가 아니라 agent lifecycle.** Anthropic 공식 hook spec으로 LLM 표명 의도와 실제 `tool_input`의 정합성을 host-side에서 교차 검증. 38종 테스트 PASS, 라이브 환경에서 V1+V4+차별 축 입증, FP/FN sweep 후 11개 한계 정직 명시.
 >

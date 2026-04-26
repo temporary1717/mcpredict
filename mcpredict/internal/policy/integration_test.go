@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stealien/mcpredict/internal/injection"
-	"github.com/stealien/mcpredict/internal/scanner"
-	"github.com/stealien/mcpredict/internal/verdict"
+	"mcpredict/internal/injection"
+	"mcpredict/internal/scanner"
+	"mcpredict/internal/verdict"
 )
 
 // fixtureInput mirrors the on-disk fixture shape (HookInput + a few _expected_* fields).

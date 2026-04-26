@@ -1,2 +1,0 @@
-{"role":"user","content":"프로젝트 의존성을 설치해주세요. package.json이 있습니다."}
-{"role":"assistant","content":"프로젝트 의존성을 설치하겠습니다.\n\nnpm install을 실행하여 package.json의 모든 의존성을 설치합니다."}

@@ -1,6 +1,6 @@
 // Package verdict holds the cross-module Decision/Verdict types.
 //
-// Stub. ARCHITECTURE.md v1.1 §4.2. 세션-B가 Combine 정교화 예정 (소스별 reason 연결, A10).
+// Stub. ARCHITECTURE.md v1.1 §4.2. 팀가 Combine 정교화 예정 (소스별 reason 연결, A10).
 package verdict
 
 import "strings"
@@ -34,7 +34,7 @@ func (d Decision) rank() int {
 
 // Combine selects the strictest decision. Ties merge RuleIDs and concatenate sources/reasons.
 // 추가 제안 A10: 동률 deny 다중 source일 때 reason은 "src1: r1; src2: r2".
-// 세션-B 정교화: RuleIDs / sources 중복 제거, 빈 reason은 출력 제외.
+// 팀 정교화: RuleIDs / sources 중복 제거, 빈 reason은 출력 제외.
 func Combine(vs ...Verdict) Verdict {
 	if len(vs) == 0 {
 		return Verdict{Decision: Allow}

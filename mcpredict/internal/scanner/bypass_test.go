@@ -3,7 +3,7 @@ package scanner_test
 import (
 	"testing"
 
-	"github.com/stealien/mcpredict/internal/scanner"
+	"mcpredict/internal/scanner"
 )
 
 func TestScanBypass(t *testing.T) {

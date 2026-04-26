@@ -1,6 +1,5 @@
 # mcpredict 라이브 데모 대본
 
-> 작성: 세션-B, 2026-04-26 15:55
 > 발표 라이브 데모 시퀀스. 모든 시나리오는 fixture(deterministic) 백업 보유.
 
 ---
@@ -9,7 +8,7 @@
 
 ### 0.1 install
 ```bash
-cd /Users/toor/hackerton/devlop2
+# 프로젝트 루트에서
 go build -o ~/.claude/hooks/mcpredict ./cmd/mcpredict
 ./install.sh
 ```
@@ -47,7 +46,7 @@ chmod 0600 ~/.mcpredict/audit.jsonl
 
 ### 0.5 audit-viewer 미리 띄움
 ```bash
-open /Users/toor/hackerton/devlop2/tools/audit-viewer/index.html
+open ./tools/audit-viewer/index.html
 ```
 브라우저에 한 탭 띄워두고, 데모 후 file picker로 `~/.mcpredict/audit.jsonl` 로드.
 

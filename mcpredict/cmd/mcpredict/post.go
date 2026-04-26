@@ -4,11 +4,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/stealien/mcpredict/internal/audit"
-	"github.com/stealien/mcpredict/internal/hookio"
-	"github.com/stealien/mcpredict/internal/injection"
-	"github.com/stealien/mcpredict/internal/scanner"
-	"github.com/stealien/mcpredict/internal/verdict"
+	"mcpredict/internal/audit"
+	"mcpredict/internal/hookio"
+	"mcpredict/internal/injection"
+	"mcpredict/internal/scanner"
+	"mcpredict/internal/verdict"
 )
 
 // runPost handles a PostToolUse hook invocation.

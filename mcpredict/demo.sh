@@ -9,7 +9,7 @@ set -eu
 cd "$(dirname "$0")"
 
 BIN="${BIN:-./bin/mcpredict}"
-HOME_DIR="${MCPREDICT_HOME:-/Users/toor/hackerton/devlop2/.mcpredict}"
+HOME_DIR="${MCPREDICT_HOME:-./.mcpredict}"
 export MCPREDICT_HOME="$HOME_DIR"
 
 if [ ! -x "$BIN" ]; then
@@ -36,7 +36,7 @@ run_scenario() {
 }
 
 run_scenario "Scenario 1 — intent/action mismatch (curl|bash without 'install' intent)" \
-  pre /Users/toor/hackerton/devlop2/experiments/01-hook-recon/fixtures/a-pretooluse-input.json
+  pre testdata/fixtures/sce-1-curl-pipe-mismatch.json
 
 # Scenario 2 — synthesize an inline fixture so demo is self-contained
 TMP2="$(mktemp)"

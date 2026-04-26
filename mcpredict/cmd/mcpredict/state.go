@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stealien/mcpredict/internal/audit"
-	"github.com/stealien/mcpredict/internal/session"
+	"mcpredict/internal/audit"
+	"mcpredict/internal/session"
 )
 
 // stateDir returns the mcpredict state directory ($MCPREDICT_HOME or ~/.mcpredict).

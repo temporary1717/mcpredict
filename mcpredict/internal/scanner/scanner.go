@@ -38,9 +38,10 @@ var patterns = []pattern{
 	{id: "openai-api-key", re: regexp.MustCompile(`\bsk-[A-Za-z0-9]{20,}\b`)},
 	{id: "anthropic-api-key", re: regexp.MustCompile(`\bsk-ant-[A-Za-z0-9_\-]{50,}\b`)},
 	{id: "stripe-secret", re: regexp.MustCompile(`\b(?:sk|rk)_(?:live|test)_[0-9A-Za-z]{20,}\b`)},
-	// Live MCP test 16:14 (mcp__ida-pro-dynamic__list_ida_instances): path-shaped strings like
-	//   "var/packages/ReplicationService/lib/libsynobtrfsreplicacore" matched at entropy=4.5.
-	// True secrets (AWS secret, opaque base64) sit at 5.0+; raise threshold to suppress paths.
+	// Filesystem paths with long slash-joined segments can satisfy the 32+ char
+	// character class but sit at moderate entropy (~4.0–4.7). True opaque secrets
+	// (AWS secret access key, base64 token) are at 5.0+. Threshold tuned to suppress
+	// path-shaped false positives while still catching real high-entropy material.
 	{id: "generic-high-entropy", re: regexp.MustCompile(`\b[A-Za-z0-9+/=_\-]{32,}\b`), entropyMin: 5.0},
 }
 

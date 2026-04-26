@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stealien/mcpredict/internal/dashboard"
+	"mcpredict/internal/dashboard"
 )
 
 // runDashboard serves the audit log over HTTP for live observation.
