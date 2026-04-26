@@ -1,0 +1,13 @@
+{
+  "_comment": "PreToolUse hook의 deny 응답. stdout으로 이 JSON 출력 + exit 0. Claude Code spec 권장 형식.",
+  "_alternatives": {
+    "exit_2_fallback": "stdout/stderr message + exit 2도 deny 효과는 있으나 사용자에게 stderr 노출 + 상위 호출자 전파 모호. 권장 안 함.",
+    "deprecated_decision_block": "{\"decision\":\"block\",\"reason\":\"...\"} 는 PreToolUse에서 deprecated, hookSpecificOutput 사용 권장."
+  },
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "intent_mismatch: assistant text was \"프로젝트 의존성을 설치하겠습니다\" but tool_input attempts to pipe a remote shell script (curl ... | bash). 의도와 행위가 일치하지 않음."
+  },
+  "systemMessage": "[mcpredict] blocked Bash call — see audit.jsonl for full reason"
+}

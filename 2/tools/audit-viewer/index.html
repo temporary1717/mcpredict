@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>mcpredict — audit.jsonl viewer</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --fg: #e6edf3;
+    --muted: #7d8590;
+    --border: #30363d;
+    --card: #161b22;
+    --allow: #2ea043;
+    --warn: #d29922;
+    --deny: #f85149;
+    --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; }
+  header h1 { margin: 0; font-size: 18px; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .controls input[type=file] { color: var(--muted); }
+  .controls input[type=text], .controls select {
+    background: var(--card); color: var(--fg); border: 1px solid var(--border);
+    padding: 6px 10px; border-radius: 6px; font-family: inherit;
+  }
+  .stats {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    padding: 10px 14px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 16px; color: var(--muted);
+  }
+  .stats .k { color: var(--fg); font-weight: 600; }
+  .stats .pill { padding: 2px 8px; border-radius: 999px; }
+  .pill.allow { background: rgba(46,160,67,.15); color: var(--allow); }
+  .pill.warn  { background: rgba(210,153,34,.15); color: var(--warn); }
+  .pill.deny  { background: rgba(248,81,73,.15);  color: var(--deny); }
+  .records { display: grid; gap: 10px; }
+  .rec {
+    background: var(--card); border: 1px solid var(--border); border-left-width: 4px;
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .rec.allow { border-left-color: var(--allow); }
+  .rec.warn  { border-left-color: var(--warn);  }
+  .rec.deny  { border-left-color: var(--deny);  }
+  .rec .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; }
+  .rec .ts { color: var(--muted); font-size: 12px; }
+  .rec .tool { color: var(--accent); font-weight: 600; }
+  .rec .verdict { font-weight: 700; text-transform: uppercase; }
+  .rec .verdict.allow { color: var(--allow); }
+  .rec .verdict.warn  { color: var(--warn);  }
+  .rec .verdict.deny  { color: var(--deny);  }
+  .rec .reason { margin-top: 6px; color: var(--fg); }
+  .rec .meta { margin-top: 6px; color: var(--muted); font-size: 12px; }
+  .rec .rules { margin-top: 4px; }
+  .rec .rules code {
+    background: rgba(88,166,255,.1); color: var(--accent);
+    padding: 1px 6px; border-radius: 4px; margin-right: 4px;
+  }
+  .empty { color: var(--muted); padding: 40px; text-align: center; border: 1px dashed var(--border); border-radius: 8px; }
+  details { margin-top: 6px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  details pre { background: rgba(255,255,255,.03); padding: 8px; border-radius: 6px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>mcpredict — audit.jsonl viewer</h1>
+  <div class="sub">~/.mcpredict/audit.jsonl 의 verdict 시각화 (정적 HTML, 외부 fetch 없음)</div>
+</header>
+
+<section class="controls">
+  <input type="file" id="file" accept=".jsonl,.log,.txt,application/x-ndjson,application/json" />
+  <input type="text" id="filter" placeholder="filter: tool/session/reason 검색" />
+  <select id="vfilter">
+    <option value="">verdict 전체</option>
+    <option value="allow">allow</option>
+    <option value="warn">warn</option>
+    <option value="deny">deny</option>
+  </select>
+  <button id="loadDemo">demo fixture</button>
+</section>
+
+<section id="stats" class="stats" hidden></section>
+
+<section id="records" class="records">
+  <div class="empty">audit.jsonl 파일을 위에서 선택하거나 "demo fixture" 버튼으로 샘플 로드.</div>
+</section>
+
+<script>
+const $ = sel => document.querySelector(sel);
+const records = $("#records");
+const stats = $("#stats");
+const filter = $("#filter");
+const vfilter = $("#vfilter");
+const loadDemo = $("#loadDemo");
+let allRows = [];
+
+function classify(v) {
+  if (v === "deny") return "deny";
+  if (v === "warn" || v === "ask") return "warn";
+  return "allow";
+}
+
+function render() {
+  const q = filter.value.toLowerCase().trim();
+  const vf = vfilter.value;
+  let counts = { allow: 0, warn: 0, deny: 0, total: 0 };
+  const cards = [];
+  for (const r of allRows) {
+    const cls = classify(r.verdict);
+    counts.total++;
+    counts[cls]++;
+    if (vf && cls !== vf) continue;
+    if (q) {
+      const blob = JSON.stringify(r).toLowerCase();
+      if (!blob.includes(q)) continue;
+    }
+    cards.push(card(r, cls));
+  }
+  if (cards.length === 0) {
+    records.innerHTML = `<div class="empty">매치되는 레코드 없음.</div>`;
+  } else {
+    records.innerHTML = cards.join("");
+  }
+  stats.hidden = false;
+  stats.innerHTML = `
+    <div><span class="k">총</span> ${counts.total}</div>
+    <div class="pill allow">allow ${counts.allow}</div>
+    <div class="pill warn">warn ${counts.warn}</div>
+    <div class="pill deny">deny ${counts.deny}</div>
+  `;
+}
+
+function card(r, cls) {
+  const ruleHtml = (r.rule_ids || []).map(id => `<code>${escape(id)}</code>`).join("");
+  return `
+    <div class="rec ${cls}">
+      <div class="row">
+        <span class="ts">${escape(r.ts || "")}</span>
+        <span class="tool">${escape(r.tool_name || "")}</span>
+        <span class="verdict ${cls}">${escape(r.verdict || "")}</span>
+        ${r.source ? `<span class="src">[${escape(r.source)}]</span>` : ""}
+        ${r.latency_ms ? `<span class="ts">${r.latency_ms}ms</span>` : ""}
+      </div>
+      <div class="reason">${escape(r.reason || "")}</div>
+      ${ruleHtml ? `<div class="rules">${ruleHtml}</div>` : ""}
+      <div class="meta">
+        ${r.session_id ? `session=${escape(r.session_id.slice(0, 8))}…` : ""}
+        ${r.hook_event ? ` · ${escape(r.hook_event)}` : ""}
+        ${r.intent_hash ? ` · intent=${escape(r.intent_hash.slice(7, 19))}…` : ""}
+        ${r.tool_input_hash ? ` · input=${escape(r.tool_input_hash.slice(7, 19))}…` : ""}
+      </div>
+      <details>
+        <summary>raw</summary>
+        <pre>${escape(JSON.stringify(r, null, 2))}</pre>
+      </details>
+    </div>`;
+}
+
+function escape(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function parseJSONL(text) {
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try { out.push(JSON.parse(trimmed)); } catch (e) { /* skip malformed */ }
+  }
+  return out;
+}
+
+$("#file").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const text = await f.text();
+  allRows = parseJSONL(text);
+  render();
+});
+filter.addEventListener("input", render);
+vfilter.addEventListener("change", render);
+
+loadDemo.addEventListener("click", () => {
+  const now = "2026-04-26T15:30:00.000Z";
+  allRows = [
+    // === 차별 축 라이브 입증 — 동일 curl|bash 패턴이 의도에 따라 다른 verdict ===
+    {
+      ts: "2026-04-26T06:40:22.563Z", session_id: "e559c3a1-abcf-45ea-a7d7-34589eb73e9f",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "allow",
+      rule_ids: [], reason: "",
+      intent_hash: "sha256:1cae74dffabc12345678aabb",   // intent contains "install"
+      tool_input_hash: "sha256:44e5e18d299a116575b5a5f8",
+      latency_ms: 17,
+    },
+    {
+      ts: "2026-04-26T06:41:03.943Z", session_id: "e559c3a1-abcf-45ea-a7d7-34589eb73e9f",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "deny", source: "policy",
+      rule_ids: ["bash-curl-pipe-shell"],
+      reason: "policy: 외부 스크립트의 직접 실행 패턴. 직전 의도에 install/setup 표명이 없음 — 의도-행위 불일치.",
+      intent_hash: "sha256:7a7a7a7a7a7a7a7a7a7a7a7a",   // intent missing "install"
+      tool_input_hash: "sha256:b08393b08393b08393b08393",
+      latency_ms: 13,
+    },
+    // === 시나리오 1·2·3 + FP/FN sweep 결과 ===
+    {
+      ts: now, session_id: "361b6637-e0bf-44bf-870a-fd6d09befbc7",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "deny", source: "policy",
+      rule_ids: ["bash-curl-pipe-shell"],
+      reason: "policy: 외부 스크립트의 직접 실행 패턴이지만 직전 의도에 설치/setup 표명이 없음.",
+      intent_hash: "sha256:abc123def456789012345678",
+      tool_input_hash: "sha256:9f8e7d6c5b4a312345678901",
+      latency_ms: 32,
+    },
+    {
+      ts: now, session_id: "361b6637-e0bf-44bf-870a-fd6d09befbc7",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "deny", source: "dlp",
+      rule_ids: ["aws-access-key-id"],
+      reason: "dlp: credential or PII pattern in tool_input",
+      intent_hash: "sha256:def456789012345678901234",
+      tool_input_hash: "sha256:1a2b3c4d5e6f78901234abcd",
+      latency_ms: 18,
+    },
+    {
+      ts: now, session_id: "361b6637-e0bf-44bf-870a-fd6d09befbc7",
+      hook_event: "PostToolUse", tool_name: "WebFetch", verdict: "deny", source: "injection",
+      rule_ids: ["ignore-previous", "system-tag"],
+      reason: "injection: prompt injection patterns in tool_response",
+      intent_hash: "sha256:7777777777777777777777aa",
+      tool_input_hash: "sha256:8888888888888888888888bb",
+      latency_ms: 12,
+    },
+    {
+      ts: now, session_id: "361b6637-e0bf-44bf-870a-fd6d09befbc7",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "allow", source: "",
+      rule_ids: [],
+      reason: "",
+      intent_hash: "sha256:cafebabe1234567890123456",
+      tool_input_hash: "sha256:deadbeef1234567890123456",
+      latency_ms: 9,
+    },
+    {
+      ts: now, session_id: "361b6637-e0bf-44bf-870a-fd6d09befbc7",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "ask", source: "policy",
+      rule_ids: ["bash-curl-pipe-shell-description-mismatch"],
+      reason: "policy: description은 install이지만 직전 assistant 의도에 동일 키워드 부재 — description 위장 가능성. 사용자 확인.",
+      intent_hash: "sha256:1111222233334444555566aa",
+      tool_input_hash: "sha256:9999888877776666555544bb",
+      latency_ms: 21,
+    },
+    // === 우회 패턴 차단 (FN 보강 후) ===
+    {
+      ts: "2026-04-26T07:30:00.000Z", session_id: "fn-sweep-demo",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "deny", source: "policy",
+      rule_ids: ["bash-curl-pipe-shell"],
+      reason: "policy: 외부 스크립트의 직접 실행 패턴 (process substitution `bash <(curl ...)`)",
+      intent_hash: "sha256:fn1fn1fn1fn1fn1fn1fn1fn1",
+      tool_input_hash: "sha256:psubpsubpsubpsubpsubpsub",
+      latency_ms: 19,
+    },
+    {
+      ts: "2026-04-26T07:30:01.000Z", session_id: "fn-sweep-demo",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "deny", source: "policy",
+      rule_ids: ["bash-curl-pipe-shell"],
+      reason: "policy: 외부 스크립트의 직접 실행 패턴 (command substitution `eval $(curl ...)`)",
+      intent_hash: "sha256:fn2fn2fn2fn2fn2fn2fn2fn2",
+      tool_input_hash: "sha256:csubcsubcsubcsubcsubcsub",
+      latency_ms: 22,
+    },
+    // === FP 면제 (위치 anchor 추가 후) ===
+    {
+      ts: "2026-04-26T07:30:02.000Z", session_id: "fp-sweep-demo",
+      hook_event: "PreToolUse", tool_name: "Bash", verdict: "allow",
+      rule_ids: [], reason: "",
+      intent_hash: "sha256:doc1doc1doc1doc1doc1doc1",
+      tool_input_hash: "sha256:echormtmp1echormtmp1echo",
+      latency_ms: 11,
+    },
+  ];
+  render();
+});
+</script>
+</body>
+</html>
