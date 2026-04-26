@@ -1,5 +1,10 @@
-mcpredict
+# 빌드된 바이너리 (루트 경로만)
+/mcpredict
 dist/
+
+# Go 테스트 아티팩트
 *.test
 *.out
+
+# go.sum은 Docker 빌드 시 자동 생성 (go mod tidy)
 go.sum
