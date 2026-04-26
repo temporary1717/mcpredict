@@ -1,0 +1,5 @@
+mcpredict
+dist/
+*.test
+*.out
+go.sum

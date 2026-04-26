@@ -1,0 +1,122 @@
+version: "1"
+
+rules:
+  # ── PreToolUse: Bash ──────────────────────────────────────────────────────
+
+  - name: "block-pipe-to-shell"
+    description: "Block piping network content directly into a shell interpreter"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)(curl|wget|fetch)[^\n]{0,200}\|\s*(sh|bash|zsh|fish)'
+    action: "block"
+    reason: "curl/wget piped to shell is a common remote code execution vector"
+
+  - name: "block-eval-subshell"
+    description: "Block eval of subshell output"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: 'eval\s*\$\('
+    action: "block"
+    reason: "eval of subshell allows arbitrary code injection via command substitution"
+
+  - name: "block-process-substitution"
+    description: "Block bash <(curl ...) process substitution"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)bash\s*<\(\s*(curl|wget)'
+    action: "block"
+    reason: "process substitution from network source is equivalent to pipe-to-shell"
+
+  - name: "block-recursive-root-delete"
+    description: "Block catastrophic rm -rf targeting / or $HOME"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: 'rm\s+(-rf|-fr)\s+(/[";\s]|/root|~/|\$HOME)'
+    action: "block"
+    reason: "recursive deletion of root or home directory is unrecoverable"
+
+  - name: "block-passwd-shadow-write"
+    description: "Block overwriting system auth files"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)(>|tee)\s*/etc/(passwd|shadow|sudoers)'
+    action: "block"
+    reason: "writing to /etc/passwd or /etc/shadow is a privilege escalation vector"
+
+  # ── PreToolUse: WebFetch ─────────────────────────────────────────────────
+
+  - name: "block-aws-key-in-url"
+    description: "Block WebFetch carrying an AWS access key in URL or body"
+    event: "PreToolUse"
+    tool_pattern: 'WebFetch'
+    input_pattern: '(AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}'
+    action: "block"
+    reason: "AWS access key detected in WebFetch request — potential credential exfiltration"
+
+  - name: "warn-external-fetch-with-local-path"
+    description: "Warn when a WebFetch URL references a local file path"
+    event: "PreToolUse"
+    tool_pattern: 'WebFetch'
+    input_pattern: '(?i)https?://[^\s]+.*/(?:home|root|etc|\.ssh|\.aws)/'
+    action: "warn"
+    reason: "WebFetch URL references a local file path — possible data exfiltration"
+
+  # ── PreToolUse: Write ─────────────────────────────────────────────────────
+
+  - name: "block-write-to-system-dirs"
+    description: "Block Write tool targeting sensitive system directories"
+    event: "PreToolUse"
+    tool_pattern: 'Write'
+    input_pattern: '"file_path"\s*:\s*"/(etc|bin|sbin|usr/bin|boot)/'
+    action: "block"
+    reason: "Write targeting system directories may indicate privilege escalation"
+
+  # ── PreToolUse: Bash — Shell bypass techniques ────────────────────────────
+
+  - name: "block-interpreter-shell-escape"
+    description: "Block interpreter (python/perl/node/ruby) used to escape to shell"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)(python[23]?\s+-c\s+.{0,80}(import\s+os|subprocess|pty|__import__)|perl\s+-e\s+.{0,80}(system|exec\s*\()|node\s+(-e|-p)\s+.{0,80}(child_process|exec\s*\()|ruby\s+-e\s+.{0,80}(`|system\s*\())'
+    action: "block"
+    reason: "interpreter -e/-c flag used to invoke shell — classic sandbox escape vector"
+
+  - name: "block-base64-decode-exec"
+    description: "Block base64-decoded payload piped to shell"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)(echo\s+[A-Za-z0-9+/=]{16,}[^|]*\|[^|]*base64\s*(-d|--decode)|base64\s*(-d|--decode)[^|]*\|)\s*(sh|bash|zsh|fish)'
+    action: "block"
+    reason: "base64-decode piped to shell is an obfuscated remote-code-execution pattern"
+
+  - name: "block-ansi-hex-obfuscation"
+    description: "Block ANSI-C hex quoting used to spell out shell binary names"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '\$''(\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}){3,}'''
+    action: "block"
+    reason: "ANSI-C hex quoting can encode 'bash'/'sh' to evade keyword detection"
+
+  - name: "block-ifs-separator-bypass"
+    description: "Block IFS variable abuse for whitespace-free command construction"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '\$\{?IFS\}?'
+    action: "block"
+    reason: "${IFS} abuse splits commands without spaces to bypass naive pattern matching"
+
+  - name: "block-env-exec-bypass"
+    description: "Block env used to invoke a shell or interpreter directly"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '(?i)\benv\b(\s+-\w+)*\s+(sh|bash|zsh|python[23]?|perl|node|ruby)\b'
+    action: "block"
+    reason: "env exec bypass can invoke interpreters while evading direct binary-name checks"
+
+  - name: "block-path-traversal-cmd"
+    description: "Block path-obfuscated shell binary invocations"
+    event: "PreToolUse"
+    tool_pattern: 'Bash'
+    input_pattern: '/{2,}(bin|sh|bash)|/\w+/\.\./+\w*(sh|bash)'
+    action: "block"
+    reason: "///bin/bash or /usr/../bin/bash-style paths obfuscate shell invocation"
