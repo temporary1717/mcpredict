@@ -1,0 +1,13 @@
+# build artifacts
+bin/
+*.bak.*
+
+# local runtime state (per-user audit log, sessions)
+.mcpredict/
+
+# macOS
+.DS_Store
+
+# Go test cache (handled by Go itself, but be explicit)
+*.test
+*.out
