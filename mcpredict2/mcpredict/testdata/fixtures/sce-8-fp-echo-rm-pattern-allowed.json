@@ -1,0 +1,14 @@
+{
+  "_comment": "시나리오 8 — FP 면제 회귀 방지. echo 명령 인자 안에 'rm -rf' 패턴이 들어있어도 단순 출력은 allow. 16:35 정책 위치 anchor 추가 케이스. 향후 정규식이 위치 anchor를 빼면 회귀.",
+  "_expected_verdict": "allow",
+  "_intent": "Documenting commands for the README.",
+  "session_id": "fixture-sce-8-fp-echo-rm",
+  "transcript_path": "/tmp/fixture-transcript.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "echo \"To clean up tmp dirs use: rm -rf /tmp/scratch\"",
+    "description": "Print cleanup tip"
+  },
+  "cwd": "/tmp/demo"
+}

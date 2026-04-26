@@ -1,0 +1,123 @@
+services:
+
+  # ── Unit tests (runs inside builder stage with Go toolchain) ───────────────
+  unit-test:
+    build:
+      context: .
+      target: builder
+    working_dir: /app
+    environment:
+      - GOFLAGS=-mod=mod
+    command: go test -v -count=1 ./...
+
+  # ── Integration tests (runs all 6 scenarios) ───────────────────────────────
+  integration-test:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: /examples/test_all.sh
+
+  # ── Individual scenario runners ────────────────────────────────────────────
+  scenario1:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 1: Intent Mismatch ===' &&
+          cat /examples/fixtures/scenario1_intent_mismatch.json | mcpredict pre; echo exit: $$?"
+
+  scenario2:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 2: Credential Exfiltration ===' &&
+          cat /examples/fixtures/scenario2_credential_exfil.json | mcpredict pre; echo exit: $$?"
+
+  scenario3:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 3: Prompt Injection ===' &&
+          cat /examples/fixtures/scenario3_prompt_injection.json | mcpredict post; echo exit: $$?"
+
+  scenario4:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 4: Safe Pass-through ===' &&
+          cat /examples/fixtures/scenario4_safe_passthrough.json | mcpredict pre; echo exit: $$?"
+
+  scenario5:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 5: Base64 Bypass ===' &&
+          cat /examples/fixtures/scenario5_bypass_base64.json | mcpredict pre; echo exit: $$?"
+
+  scenario6:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '=== Scenario 6: Python Shell Escape Bypass ===' &&
+          cat /examples/fixtures/scenario6_bypass_python.json | mcpredict pre; echo exit: $$?"
+
+  # ── Dashboard (seeds audit log then serves UI on :8080) ───────────────────
+  dashboard:
+    build:
+      context: .
+      target: runtime
+    environment:
+      - MCPREDICT_HOME=/tmp/.mcpredict
+    ports:
+      - "8080:8080"
+    entrypoint: sh
+    command: >
+      -c "mkdir -p /tmp/.mcpredict/policies /tmp/.mcpredict/sessions &&
+          cp /examples/policies/default.yaml /tmp/.mcpredict/policies/ &&
+          echo '--- seeding audit log with demo events ---' &&
+          cat /examples/fixtures/scenario1_intent_mismatch.json | mcpredict pre; true &&
+          cat /examples/fixtures/scenario2_credential_exfil.json | mcpredict pre; true &&
+          cat /examples/fixtures/scenario3_prompt_injection.json | mcpredict post; true &&
+          cat /examples/fixtures/scenario4_safe_passthrough.json | mcpredict pre; true &&
+          cat /examples/fixtures/scenario5_bypass_base64.json    | mcpredict pre; true &&
+          cat /examples/fixtures/scenario6_bypass_python.json    | mcpredict pre; true &&
+          echo '--- starting dashboard on :8080 ---' &&
+          mcpredict dashboard 8080"

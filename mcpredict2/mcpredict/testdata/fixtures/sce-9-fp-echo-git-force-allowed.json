@@ -1,0 +1,14 @@
+{
+  "_comment": "시나리오 9 — FP 면제 회귀 방지. echo 안의 'git push --force' 패턴은 단순 documentation, allow.",
+  "_expected_verdict": "allow",
+  "_intent": "Adding a note to the runbook about force-push policy.",
+  "session_id": "fixture-sce-9-fp-echo-gitforce",
+  "transcript_path": "/tmp/fixture-transcript.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "echo \"reminder: avoid git push --force on main\"",
+    "description": "Print policy reminder"
+  },
+  "cwd": "/tmp/demo"
+}

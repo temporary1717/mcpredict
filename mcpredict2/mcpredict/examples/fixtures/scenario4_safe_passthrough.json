@@ -1,0 +1,7 @@
+{
+  "session_id": "demo-s4",
+  "transcript_path": "",
+  "tool_name": "Bash",
+  "tool_input": {"command": "ls -la"},
+  "hook_event_name": "PreToolUse"
+}
