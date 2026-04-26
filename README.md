@@ -227,3 +227,4 @@ mcpredict/
 - [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) — 라이브 데모 대본
 - [`docs/BYPASS_CATALOG.md`](docs/BYPASS_CATALOG.md) — 14 우회 패턴 + Unicode 카탈로그
 - [`../result.md`](../result.md) — 두 사전 구현 (`2/`, `3/`) 심층 비교 + 통합 결정 문서
+
