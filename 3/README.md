@@ -124,6 +124,122 @@ examples/fixtures/         데모 픽스처 + transcript
 
 ---
 
+## 정책 커스터마이징
+
+mcpredict는 룰을 사전 정의하지 않습니다. 각 사용자의 환경과 보안 요구에 맞게 직접 정의하세요.  
+`~/.mcpredict/policies/` 안의 `*.yaml` 파일을 저장하면 **즉시 반영**됩니다 — 재시작·재빌드 불필요.
+
+```
+~/.mcpredict/policies/
+├── my_rules.yaml      ← 직접 작성한 룰
+├── secrets.yaml       ← 자격증명 유출 방지 룰
+└── ...                ← 파일명 자유, 여러 파일 병합 적용
+```
+
+---
+
+### 방법 1 — LLM에게 룰 생성 요청
+
+Claude Code 등 LLM에게 아래와 같이 요청하면 즉시 사용 가능한 YAML 룰을 얻을 수 있습니다.
+
+**예시 프롬프트:**
+
+```
+아래는 mcpredict 정책 파일 포맷입니다.
+
+필드 설명:
+- name: 룰 고유 ID (영문 소문자 + 하이픈)
+- event: PreToolUse | PostToolUse | *
+- tool_pattern: 도구 이름 정규식 (Bash / WebFetch / Write / .*)
+- input_pattern: 도구 입력 JSON에 매칭할 RE2 정규식
+- action: block | warn
+- reason: 사용자에게 표시할 차단 사유
+
+이 포맷으로, AWS/GitHub/Slack 등 git secret key가
+Bash 명령이나 WebFetch URL을 통해 외부로 유출되지 않도록
+차단하는 룰을 작성해줘.
+```
+
+**LLM 생성 결과 예시:**
+
+```yaml
+version: "1"
+rules:
+  - name: "block-aws-key-leak"
+    event: "PreToolUse"
+    tool_pattern: '.*'
+    input_pattern: '(AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}'
+    action: "block"
+    reason: "AWS 액세스 키가 도구 입력에 포함되어 있습니다"
+
+  - name: "block-github-token-leak"
+    event: "PreToolUse"
+    tool_pattern: '.*'
+    input_pattern: 'ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}'
+    action: "block"
+    reason: "GitHub Personal Access Token이 감지되었습니다"
+
+  - name: "block-slack-token-leak"
+    event: "PreToolUse"
+    tool_pattern: '.*'
+    input_pattern: 'xox[baprs]-[A-Za-z0-9\-]{10,}'
+    action: "block"
+    reason: "Slack 토큰이 도구 입력에 포함되어 있습니다"
+```
+
+생성된 YAML을 `~/.mcpredict/policies/secrets.yaml` 로 저장하면 즉시 적용됩니다.
+
+---
+
+### 방법 2 — 직접 regex 작성
+
+**YAML 스키마:**
+
+```yaml
+version: "1"
+rules:
+  - name: "룰-이름"           # 필수. 고유 ID (영문 소문자·숫자·하이픈)
+    description: "설명"       # 선택
+    event: "PreToolUse"       # PreToolUse | PostToolUse | * (기본: *)
+    tool_pattern: 'Bash'      # 도구 이름에 매칭할 RE2 정규식
+                              #   Bash / WebFetch / Write / Read / .* 등
+    input_pattern: '(?i)...'  # 도구 입력 JSON 전체에 매칭할 RE2 정규식
+                              #   (?i) = 대소문자 무시
+    action: "block"           # block = 실행 차단 (exit 2)
+                              # warn  = 허용하되 Claude 컨텍스트에 경고 주입
+    reason: "차단 사유"        # 차단 시 표시되는 메시지
+```
+
+**자주 쓰는 패턴 예시:**
+
+| 목적 | input_pattern |
+|------|---------------|
+| curl/wget → 쉘 파이프 | `(?i)(curl\|wget)[^\n]{0,200}\|\s*(sh\|bash)` |
+| AWS 액세스 키 | `(AKIA\|ABIA\|ACCA\|ASIA)[A-Z0-9]{16}` |
+| GitHub 토큰 | `ghp_[A-Za-z0-9]{36}` |
+| PEM 프라이빗 키 | `-----BEGIN (RSA\|EC\|OPENSSH) PRIVATE KEY-----` |
+| /etc/passwd 변조 | `(>\|tee)\s*/etc/(passwd\|shadow\|sudoers)` |
+| base64 디코드 실행 | `(?i)base64\s*(-d\|--decode)[^\|]*\|\s*(sh\|bash)` |
+| 시스템 디렉터리 쓰기 | `"file_path"\s*:\s*"/(etc\|bin\|sbin)/` |
+
+**전체 예시 파일:** `examples/policies/example.yaml` 참고
+
+---
+
+### Docker 환경에서 정책 마운트
+
+Docker로 mcpredict를 실행할 때는 호스트의 정책 디렉터리를 마운트하면
+이미지 재빌드 없이 정책을 수정할 수 있습니다:
+
+```bash
+docker run --rm \
+  -v "$HOME/.mcpredict/policies:/root/.mcpredict/policies:ro" \
+  -e MCPREDICT_HOME=/root/.mcpredict \
+  mcpredict:dev pre < hook_input.json
+```
+
+---
+
 ## 알려진 한계
 
 - LLM이 의도까지 일관되게 거짓 선언하면 정합성 검증 우회 가능

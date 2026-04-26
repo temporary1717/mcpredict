@@ -28,9 +28,9 @@ COPY examples/ /examples/
 
 RUN chmod +x /examples/test_all.sh
 
-# Pre-populate default policies
-RUN mkdir -p /root/.mcpredict/policies /root/.mcpredict/sessions && \
-    cp /examples/policies/default.yaml /root/.mcpredict/policies/
+# 정책 디렉터리만 생성 — 룰 파일은 런타임에 마운트하거나 직접 추가
+# ~/.mcpredict/policies/*.yaml 변경 시 재시작·재빌드 없이 즉시 반영됨
+RUN mkdir -p /root/.mcpredict/policies /root/.mcpredict/sessions
 
 ENV MCPREDICT_HOME=/root/.mcpredict
 
